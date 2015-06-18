@@ -50,6 +50,8 @@ Type these at the command line to see useful things happen.
 
 * `grunt debug` - runs your application in debug mode, fires up a `node-inspector` translation process, and opens a Chrome window to access `node-inspector`.
 
+* `grunt autorestart` - runs your app, and watches for changes in files.  Whenever you change a file that makes up part of your app, it restarts your app for you.  When it notices a crash, it waits for you to make a change in your files. 
+* 
 * `grunt test` - runs your test suite
 
 * `grunt nag` - runs code quality analysis tools on your code and complains

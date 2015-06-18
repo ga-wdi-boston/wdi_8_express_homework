@@ -4,134 +4,65 @@ var assert = require('assert');
 var async = require('async');
 
 var mongoUrl = 'mongodb://localhost/counters';
-var MongoClient = require('mongodb').MongoClient;
 var mongoose = require('mongoose');
 mongoose.connect(mongoUrl);
 
 var addUniqueIntegerTagToSchema = require('../lib/add-unique-integer-tags-to-schema.js');
-var ensureCounter = addUniqueIntegerTagToSchema.ensureCounter;
-var getNextInSequence = add - unique - integer - tags - to - schema.getNextInSequence;
+var Counter = addUniqueIntegerTagToSchema.Counter;
+var getNextInSequence = addUniqueIntegerTagToSchema.getNextInSequence;
 
 describe('database counters', function() {
-  var db;
 
-  beforeAll(function(done) {
-    MongoClient.connect(mongoUrl, function(error, newDb) {
-      assert.equal(null, error);
-      db = newDb;
-      db.collection('counters', function(error, collection) {
-        db.renameCollection('counters', 'originalCounters', done);
-      });
-    });
+  beforeEach(function(done) {
+    Counter.remove({
+        _id: {
+          $in: ['deNovo', 'recycled', 'antiche']
+        }
+      },
+      done);
   });
 
-  describe('ensureCounter', function() {
+  describe('getNextInSequence', function() {
 
-    beforeEach(function(done) {
-      db.collection('counters').drop(done);
-    });
-
-    it('creates a counter where there was none', function(done) {
-      ensureCounter('deNovo', function(error, currentVal) {
-        expect(error).toBeFalsy();
-        db.collection('counters').find({
+    it('creates a sequence when none exists', function(done) {
+      getNextInSequence('deNovo', function(error, sequence) {
+        Counter.find({
           _id: 'deNovo'
         }).count(function(err, count) {
+          expect(err).toBeFalsy();
           expect(count).toBe(1);
           done();
         });
       });
     });
 
-    it('leaves well enough alone when the counter exists', function(done) {
-      db.collection('counters').insert({
-        _id: 'extant',
-        seq: 23
-      }, function(error, document) {
-        expect(error).toBeFalsy();
-        ensureCounter('extant', function(error, currentval) {
+    it('does not create a new sequence when one exists', function(done) {
+      Counter.create({
+        _id: 'antiche',
+        seq: 1832
+      }, function(error, counter) {
+        getNextInSequence('antiche', function(error, count) {
           expect(error).toBeFalsy();
-          db.collection('counters').find({
-            _id: 'extant'
-          }).count(function(err, count) {
-            expect(count).toBe(1);
-            done();
+          expect(count).toBe(1833);
+          done();
+        });
+      });
+    });
+
+    it('provides a new id for each request', function(done) {
+      async.times(5,
+        function(err, next) {
+          getNextInSequence('recycled', function(error, count) {
+            expect(error).toBeFalsy();
+            next(error, count);
           });
-        });
-      });
-    });
-
-    it('returns the current sequence value of a newly created counter', function(done) {
-      ensureCounter('neverBefore', function(error, currentVal) {
-        expect(error).toBeFalsy();
-        expect(currentVal).toBe(0);
-        done();
-      });
-    });
-
-    it('returns the current sequence value of a well-used counter', function(done) {
-      db.collection('counters').insert({
-        _id: 'annoMirabilia',
-        seq: 1841
-      }, function(error, document) {
-        expect(error).toBeFalsy();
-        ensureCounter('annoMirabilia', function(error, currentVal) {
-          expect(error).toBeFalsy();
-          expect(currentVal).toBe(1841);
+        },
+        function(err, ids) {
+          expect(ids.sort()).toEqual([1, 2, 3, 4, 5, ]);
           done();
-        });
-      });
-    });
-  });
-
-  describe('getNextInSequence', function() {
-
-    beforeEach(function(done) {
-      db.collection('counters').drop(done);
-    });
-
-    it('gets the next ID in sequence', function(done) {
-
-      var tryAgain = function(callback) {
-        getNextInSequence('manyManyMany', callback);
-      };
-
-      async.series([
-
-          function(done) {
-            ensureCounter('manyManyMany', function(error, count) {
-              expect(error).toBeFalsy();
-              expect(count).toBe(0);
-              done(null, count);
-            });
-          },
-
-          tryAgain,
-          tryAgain,
-          tryAgain,
-          tryAgain
-
-        ],
-        function(err, results) {
-          expect(results).toEqual([0, 1, 2, 3, 4]);
-          done();
-        });
+        }
+      );
 
     });
-  });
-
-
-
-  afterAll(function(done) {
-    mongoose.disconnect();
-    db.collection('counters').drop(function(error) {
-      assert.equal(null, error);
-      db.renameCollection('originalCounters', 'counters', function(error) {
-        assert.equal(null, error);
-        db.close(done);
-      });
-    });
-
-
   });
 });
