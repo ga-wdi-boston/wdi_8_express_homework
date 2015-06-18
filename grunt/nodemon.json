@@ -1,8 +1,5 @@
 {
   "options": {
-    "nodeArgs": [
-      "--debug-brk"
-    ],
     "ignore": [
       "node_modules/**",
       "<%= paths.tests =>"
@@ -12,7 +9,18 @@
     "delay": 5
   },
 
-  "debug": {
+  "develop": {
     "script": "<%= package.main %>"
+  },
+
+  "debug": {
+    "script": "<%= package.main %>",
+    "options": {
+      "nodeArgs": [
+        "--debug-brk"
+      ]
+
+    }
+
   }
 }
