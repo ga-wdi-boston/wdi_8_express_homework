@@ -14,11 +14,11 @@ var mongoose = require('mongoose');
 
 mongoose.connect('mongodb://localhost/wdi');
 
-var Article = require('./lib/movies.js');
+var Movie = require('./lib/movies.js');
 
 
 app.get('/api/v1/movies', function(req, res){
-  Moive.find({}, function(error, movieList){
+  Movie.find({}, function(error, movieList){
     if(error){
       console.log(error);
       res.statusCode(404);
